@@ -1,10 +1,10 @@
 <!DOCTYPE html>
-<html lang="es">
+<html lang="en">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <meta name="referrer" content="strict-origin-when-cross-origin" />
-  <title>Esquiva las migas</title>
+  <title>Dodge the Crumbs</title>
   <style>
     :root {
       --bg: #0e1116;
@@ -261,15 +261,15 @@
   <div class="wrap">
     <header>
       <div>
-        <h1>Esquiva las migas</h1>
-        <p class="help">Muévete por todo el campo. Junta 12 de oro. Tienes 3 vidas y un esquive.</p>
+        <h1>Dodge the Crumbs</h1>
+        <p class="help">Move around the whole field. Collect 12 gold crumbs. You have 3 lives and a dash.</p>
       </div>
       <div class="stats">
-        <div class="stat"><span>oro</span><strong id="score">0</strong></div>
-        <div class="stat"><span>vidas</span><strong id="lives">♥♥♥</strong></div>
-        <div class="stat"><span>oleada</span><strong id="wave">1</strong></div>
+        <div class="stat"><span>gold</span><strong id="score">0</strong></div>
+        <div class="stat"><span>lives</span><strong id="lives">♥♥♥</strong></div>
+        <div class="stat"><span>wave</span><strong id="wave">1</strong></div>
         <div class="stat"><span>combo</span><strong id="combo">—</strong></div>
-        <div class="stat"><span>récord</span><strong id="best">0</strong></div>
+        <div class="stat"><span>best</span><strong id="best">0</strong></div>
       </div>
     </header>
     <div class="bar" aria-hidden="true"><div id="fill"></div></div>
@@ -277,25 +277,25 @@
       <canvas id="game" width="900" height="540"></canvas>
     </div>
     <div class="controls">
-      <span>Ratón o WASD · Espacio, Shift o clic derecho para esquivar · Esc pausa</span>
-      <button id="dash" type="button">Esquive</button>
+      <span>Mouse or WASD · Space, Shift, or right-click to dash · Esc to pause</span>
+      <button id="dash" type="button">Dash</button>
     </div>
   </div>
 
   <div class="start" id="start">
     <div class="box">
-      <h2>A recoger</h2>
-      <p class="help">Atrapa las migas de oro y apártate del resto. Cada golpe cuesta una vida. Al ganar o perder, el vídeo se reproduce aquí mismo, debajo del resultado.</p>
+      <h2>Ready to collect?</h2>
+      <p class="help">Collect the golden crumbs and avoid the rest. Each hit costs a life. When you win or lose, a video plays right here, below the result.</p>
       <ul class="legend">
-        <li><i class="c-gold"></i>Oro: recógelo</li>
-        <li><i class="c-red"></i>Roja: cae en diagonal</li>
-        <li><i class="c-purple"></i>Morada: te sigue</li>
-        <li><i class="c-teal"></i>Turquesa: se balancea</li>
-        <li><i class="c-yellow"></i>Amarilla: avisa y se lanza</li>
-        <li><i class="c-orange"></i>Naranja: cruza de lado</li>
-        <li><i class="c-big"></i>Gorda: lenta y enorme</li>
+        <li><i class="c-gold"></i>Gold: collect it</li>
+        <li><i class="c-red"></i>Red: falls diagonally</li>
+        <li><i class="c-purple"></i>Purple: follows you</li>
+        <li><i class="c-teal"></i>Teal: sways side to side</li>
+        <li><i class="c-yellow"></i>Yellow: warns, then charges</li>
+        <li><i class="c-orange"></i>Orange: sweeps across</li>
+        <li><i class="c-big"></i>Big: slow and huge</li>
       </ul>
-      <button id="play" type="button">Jugar</button>
+      <button id="play" type="button">Play</button>
     </div>
   </div>
 
@@ -303,14 +303,14 @@
     <div class="card">
       <h2 id="title"></h2>
       <p class="reason" id="reason"></p>
-      <p class="migajero" id="migajero" hidden>MIGAJERO</p>
+      <p class="migajero" id="migajero" hidden>CRUMB GOBLIN</p>
       <div class="video-wrap" id="screen" hidden>
-        <iframe id="player" title="Vídeo" hidden referrerpolicy="strict-origin-when-cross-origin" allow="autoplay; encrypted-media; picture-in-picture; fullscreen" allowfullscreen></iframe>
+        <iframe id="player" title="Video" hidden referrerpolicy="strict-origin-when-cross-origin" allow="autoplay; encrypted-media; picture-in-picture; fullscreen" allowfullscreen></iframe>
         <video id="clip" hidden controls autoplay playsinline></video>
       </div>
-      <p><a id="open" href="#" target="_blank" rel="noopener" hidden>Abrir el vídeo en YouTube</a></p>
+      <p><a id="open" href="#" target="_blank" rel="noopener" hidden>Open video on YouTube</a></p>
       <div>
-        <button id="again" type="button">Jugar otra vez</button>
+        <button id="again" type="button">Play again</button>
       </div>
     </div>
   </div>
@@ -357,12 +357,12 @@
     ];
 
     const KIND = {
-      miga: { color: "#ff5d5d", label: "Miga", blame: "una miga roja" },
-      cazador: { color: "#c084fc", label: "Cazador", blame: "un cazador" },
-      zigzag: { color: "#5eead4", label: "Zigzag", blame: "una miga zigzag" },
-      rapido: { color: "#fde047", label: "Rápida", blame: "una miga rápida" },
-      barrido: { color: "#fb923c", label: "Barrido", blame: "una miga barrendera" },
-      gordo: { color: "#ef4444", label: "Gorda", blame: "una miga gorda" }
+      miga: { color: "#ff5d5d", label: "Crumb", blame: "a red crumb" },
+      cazador: { color: "#c084fc", label: "Hunter", blame: "a hunter" },
+      zigzag: { color: "#5eead4", label: "Zigzag", blame: "a zigzag crumb" },
+      rapido: { color: "#fde047", label: "Fast", blame: "a fast crumb" },
+      barrido: { color: "#fb923c", label: "Sweeper", blame: "a sweeping crumb" },
+      gordo: { color: "#ef4444", label: "Big", blame: "a big crumb" }
     };
 
     const keys = new Set();
@@ -384,7 +384,7 @@
     let combo = 0;
     let best = 0;
     let lastCollect = -10;
-    let killer = "una miga roja";
+    let killer = "a red crumb";
     let shake = 0;
     let hurt = 0;
     let spawnAcc = 0;
@@ -465,7 +465,7 @@
       combo = 0;
       lastCollect = -10;
       elapsed = 0;
-      killer = "una miga roja";
+      killer = "a red crumb";
       shake = 0;
       hurt = 0;
       spawnAcc = 0.15;
@@ -572,11 +572,11 @@
       clearTimeout(migajeroTimer);
 
       const choice = pick(won ? WIN : DEATH);
-      titleEl.textContent = won ? "GANASTE" : "PERDISTE";
+      titleEl.textContent = won ? "YOU WIN" : "GAME OVER";
       titleEl.style.color = won ? "#3ddc97" : "#ff5d5d";
       reasonEl.textContent = won
-        ? "Juntaste las 12 migas de oro."
-        : `Te atrapó ${killer}.`;
+        ? "You collected all 12 golden crumbs."
+        : `You were caught by ${killer}.`;
 
       migajeroEl.hidden = true;
       openEl.hidden = true;
@@ -880,7 +880,7 @@
       if (nextWave !== wave) {
         wave = nextWave;
         syncHud();
-        floatText(W / 2, H / 2, `OLEADA ${wave}`, "#f4f1ea", true);
+        floatText(W / 2, H / 2, `WAVE ${wave}`, "#f4f1ea", true);
         tone(420, 0.08, "square", 0.03);
       }
 
@@ -1217,7 +1217,7 @@
         ctx.fillStyle = "#d5dbe6";
         ctx.font = "16px Segoe UI, sans-serif";
         ctx.textAlign = "center";
-        ctx.fillText("Muévete libre · el aro dorado es el esquive", W / 2, 26);
+        ctx.fillText("Move freely · the golden ring shows your dash cooldown", W / 2, 26);
         ctx.globalAlpha = 1;
       }
 
@@ -1239,10 +1239,10 @@
         ctx.fillStyle = "#f4f1ea";
         ctx.textAlign = "center";
         ctx.font = "700 42px Segoe UI, sans-serif";
-        ctx.fillText("PAUSA", W / 2, H / 2);
+        ctx.fillText("PAUSED", W / 2, H / 2);
         ctx.fillStyle = "#a8b0bd";
         ctx.font = "18px Segoe UI, sans-serif";
-        ctx.fillText("Esc para seguir", W / 2, H / 2 + 34);
+        ctx.fillText("Press Esc to resume", W / 2, H / 2 + 34);
       }
     }
 
