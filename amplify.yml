@@ -1,0 +1,14 @@
+version: 1
+frontend:
+  phases:
+    build:
+      commands:
+        - echo "Sitio estatico"
+  artifacts:
+    baseDirectory: .
+    files:
+      - index.html
+      - amplify.yml
+      - customHttp.yml
+  cache:
+    paths: []

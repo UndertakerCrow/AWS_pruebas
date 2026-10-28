@@ -294,6 +294,7 @@
       <h2 id="title"></h2>
       <p class="reason" id="reason"></p>
       <p class="migajero" id="migajero" hidden>MIGAJERO</p>
+      <iframe class="frame" id="player" title="Video" hidden referrerpolicy="strict-origin-when-cross-origin" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share; fullscreen" allowfullscreen></iframe>
       <video class="frame" id="clip" hidden controls autoplay playsinline></video>
       <p><a id="open" href="#" target="_blank" rel="noopener" hidden>Abrir el video en YouTube</a></p>
       <div>
@@ -328,6 +329,7 @@
     const migajeroEl = document.getElementById("migajero");
     const openEl = document.getElementById("open");
     const clipEl = document.getElementById("clip");
+    const playerEl = document.getElementById("player");
     const startEl = document.getElementById("start");
 
     const DEATH = [
@@ -484,12 +486,26 @@
       clipEl.removeAttribute("src");
       clipEl.load();
       clipEl.hidden = true;
+      playerEl.hidden = true;
+      playerEl.removeAttribute("src");
+    }
+
+    function embedYouTube(id) {
+      clipEl.hidden = true;
+      playerEl.hidden = false;
+      const origin = encodeURIComponent(location.origin);
+      playerEl.src = `https://www.youtube.com/embed/${id}?autoplay=1&rel=0&playsinline=1&origin=${origin}`;
     }
 
     function embed(id) {
       const watch = `https://www.youtube.com/watch?v=${id}`;
       openEl.href = watch;
       openEl.hidden = true;
+      const local = location.hostname === "localhost" || location.hostname === "127.0.0.1" || location.protocol === "file:";
+      if (!local) {
+        embedYouTube(id);
+        return;
+      }
       clipEl.hidden = false;
       fetch(`/play?id=${encodeURIComponent(id)}`)
         .then((response) => {
@@ -501,8 +517,7 @@
           return clipEl.play();
         })
         .catch(() => {
-          clipEl.hidden = true;
-          openEl.hidden = false;
+          embedYouTube(id);
         });
     }
 
