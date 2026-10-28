@@ -141,7 +141,7 @@
     .overlay.show { display: grid; }
 
     .card {
-      width: min(960px, 100%);
+      width: min(1100px, 100%);
       text-align: center;
     }
 
@@ -168,13 +168,23 @@
       to { transform: scale(1); opacity: 1; }
     }
 
-    .frame {
-      width: min(960px, 100%);
+    .video-wrap {
+      position: relative;
+      width: min(1100px, 94vw, calc(68vh * 16 / 9));
+      margin: 8px auto 18px;
       aspect-ratio: 16 / 9;
-      display: block;
-      margin: 0 auto;
-      border: 0;
       border-radius: 12px;
+      overflow: hidden;
+      background: #000;
+    }
+
+    .video-wrap iframe,
+    .video-wrap video {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      border: 0;
       background: #000;
     }
 
@@ -294,8 +304,10 @@
       <h2 id="title"></h2>
       <p class="reason" id="reason"></p>
       <p class="migajero" id="migajero" hidden>MIGAJERO</p>
-      <iframe class="frame" id="player" title="Video" hidden referrerpolicy="strict-origin-when-cross-origin" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share; fullscreen" allowfullscreen></iframe>
-      <video class="frame" id="clip" hidden controls autoplay playsinline></video>
+      <div class="video-wrap" id="screen" hidden>
+        <iframe id="player" title="Video" hidden referrerpolicy="strict-origin-when-cross-origin" allow="autoplay; encrypted-media; picture-in-picture; fullscreen" allowfullscreen></iframe>
+        <video id="clip" hidden controls autoplay playsinline></video>
+      </div>
       <p><a id="open" href="#" target="_blank" rel="noopener" hidden>Abrir el video en YouTube</a></p>
       <div>
         <button id="again" type="button">Jugar otra vez</button>
@@ -330,6 +342,7 @@
     const openEl = document.getElementById("open");
     const clipEl = document.getElementById("clip");
     const playerEl = document.getElementById("player");
+    const screenEl = document.getElementById("screen");
     const startEl = document.getElementById("start");
 
     const DEATH = [
@@ -481,20 +494,49 @@
       return table[table.length - 1];
     }
 
+    let autoplayTimer = 0;
+
     function stopClip() {
+      clearInterval(autoplayTimer);
       clipEl.pause();
       clipEl.removeAttribute("src");
       clipEl.load();
       clipEl.hidden = true;
       playerEl.hidden = true;
       playerEl.removeAttribute("src");
+      screenEl.hidden = true;
+    }
+
+    function commandPlayer(func, args) {
+      if (!playerEl.contentWindow) return;
+      playerEl.contentWindow.postMessage(JSON.stringify({
+        event: "command",
+        func,
+        args: args || []
+      }), "*");
+    }
+
+    function startPlayer() {
+      commandPlayer("playVideo");
+      commandPlayer("unMute");
+      commandPlayer("setVolume", [100]);
     }
 
     function embedYouTube(id) {
       clipEl.hidden = true;
+      screenEl.hidden = false;
       playerEl.hidden = false;
       const origin = encodeURIComponent(location.origin);
-      playerEl.src = `https://www.youtube.com/embed/${id}?autoplay=1&rel=0&playsinline=1&origin=${origin}`;
+      playerEl.src = `https://www.youtube.com/embed/${id}?autoplay=1&mute=1&enablejsapi=1&rel=0&playsinline=1&origin=${origin}`;
+      const kick = () => startPlayer();
+      playerEl.addEventListener("load", kick, { once: true });
+      let tries = 0;
+      clearInterval(autoplayTimer);
+      autoplayTimer = setInterval(() => {
+        startPlayer();
+        tries += 1;
+        if (tries > 10) clearInterval(autoplayTimer);
+      }, 400);
     }
 
     function embed(id) {
@@ -506,6 +548,7 @@
         embedYouTube(id);
         return;
       }
+      screenEl.hidden = false;
       clipEl.hidden = false;
       fetch(`/play?id=${encodeURIComponent(id)}`)
         .then((response) => {
