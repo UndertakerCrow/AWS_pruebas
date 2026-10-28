@@ -1,0 +1,1255 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="referrer" content="strict-origin-when-cross-origin" />
+  <title>Esquiva las migas</title>
+  <style>
+    :root {
+      --bg: #0e1116;
+      --panel: #171c24;
+      --ink: #f4f1ea;
+      --muted: #a8b0bd;
+      --accent: #f2c14e;
+      --danger: #ff5d5d;
+      --good: #3ddc97;
+    }
+
+    * { box-sizing: border-box; }
+
+    html, body {
+      margin: 0;
+      min-height: 100%;
+      background:
+        radial-gradient(circle at 20% -10%, #243044 0%, transparent 42%),
+        radial-gradient(circle at 90% 0%, #3a2a16 0%, transparent 36%),
+        var(--bg);
+      color: var(--ink);
+      font-family: "Segoe UI", system-ui, sans-serif;
+    }
+
+    body {
+      display: grid;
+      place-items: center;
+      min-height: 100vh;
+    }
+
+    .wrap {
+      width: min(940px, 96vw);
+      padding: 18px 0 28px;
+      user-select: none;
+    }
+
+    header {
+      display: flex;
+      justify-content: space-between;
+      align-items: end;
+      gap: 16px;
+      margin-bottom: 10px;
+      flex-wrap: wrap;
+    }
+
+    h1 {
+      margin: 0;
+      font-size: 1.55rem;
+      letter-spacing: 0.02em;
+    }
+
+    p.help {
+      margin: 4px 0 0;
+      color: var(--muted);
+      font-size: 0.95rem;
+    }
+
+    .stats {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .stat {
+      background: var(--panel);
+      border: 1px solid #2a3340;
+      border-radius: 12px;
+      padding: 8px 12px;
+      min-width: 78px;
+      text-align: right;
+    }
+
+    .stat span {
+      display: block;
+      color: var(--muted);
+      font-size: 0.72rem;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+    }
+
+    .stat strong { font-size: 1.15rem; }
+    #lives { color: var(--danger); letter-spacing: 0.12em; }
+
+    .bar {
+      height: 8px;
+      background: #171c24;
+      border: 1px solid #2a3340;
+      border-radius: 99px;
+      overflow: hidden;
+      margin-bottom: 10px;
+    }
+
+    .bar > div {
+      height: 100%;
+      width: 0%;
+      background: linear-gradient(90deg, #c9892d, #ffe08a);
+    }
+
+    .stage { position: relative; }
+
+    canvas {
+      width: 100%;
+      height: auto;
+      display: block;
+      background: #121820;
+      border: 1px solid #2a3340;
+      border-radius: 16px;
+      box-shadow: 0 20px 50px rgba(0, 0, 0, 0.35);
+      cursor: none;
+      touch-action: none;
+    }
+
+    .controls {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 12px;
+      margin-top: 10px;
+      color: var(--muted);
+      font-size: 0.92rem;
+    }
+
+    .overlay {
+      position: fixed;
+      inset: 0;
+      display: none;
+      place-items: center;
+      background: #07090d;
+      z-index: 10;
+      padding: 24px;
+    }
+
+    .overlay.show { display: grid; }
+
+    .card {
+      width: min(960px, 100%);
+      text-align: center;
+    }
+
+    .card h2 {
+      margin: 0 0 8px;
+      font-size: clamp(2rem, 6vw, 4rem);
+    }
+
+    .card .reason {
+      color: var(--muted);
+      margin-bottom: 16px;
+    }
+
+    .migajero {
+      font-size: clamp(3.2rem, 14vw, 9rem);
+      font-weight: 900;
+      letter-spacing: 0.08em;
+      margin: 0;
+      animation: pop 0.35s ease-out;
+    }
+
+    @keyframes pop {
+      from { transform: scale(0.4); opacity: 0; }
+      to { transform: scale(1); opacity: 1; }
+    }
+
+    .frame {
+      width: min(960px, 100%);
+      aspect-ratio: 16 / 9;
+      display: block;
+      margin: 0 auto;
+      border: 0;
+      border-radius: 12px;
+      background: #000;
+    }
+
+    button {
+      border: 0;
+      background: var(--accent);
+      color: #1a1404;
+      font-weight: 700;
+      font-size: 1rem;
+      padding: 12px 18px;
+      border-radius: 999px;
+      cursor: pointer;
+    }
+
+    button:hover { filter: brightness(1.06); }
+
+    #dash {
+      background: #242b36;
+      color: var(--ink);
+      border: 1px solid #3a4556;
+    }
+
+    a { color: var(--accent); }
+
+    .start {
+      position: fixed;
+      inset: 0;
+      display: grid;
+      place-items: center;
+      background: rgba(6, 8, 12, 0.78);
+      z-index: 5;
+      padding: 20px;
+    }
+
+    .start .box {
+      background: var(--panel);
+      border: 1px solid #2a3340;
+      border-radius: 18px;
+      padding: 26px 28px 22px;
+      width: min(560px, 94vw);
+      text-align: center;
+    }
+
+    .legend {
+      list-style: none;
+      padding: 0;
+      margin: 16px 0 6px;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 7px 16px;
+      text-align: left;
+      color: var(--muted);
+      font-size: 0.92rem;
+    }
+
+    .legend i {
+      display: inline-block;
+      width: 11px;
+      height: 11px;
+      border-radius: 50%;
+      margin-right: 7px;
+    }
+
+    .c-red { background: #ff5d5d; }
+    .c-purple { background: #c084fc; }
+    .c-teal { background: #5eead4; }
+    .c-yellow { background: #fde047; }
+    .c-orange { background: #fb923c; }
+    .c-big { background: #ef4444; }
+    .c-gold { background: #f2c14e; }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <header>
+      <div>
+        <h1>Esquiva las migas</h1>
+        <p class="help">Muévete por todo el campo. Junta 12 de oro. Tienes 3 vidas y un esquive.</p>
+      </div>
+      <div class="stats">
+        <div class="stat"><span>Oro</span><strong id="score">0</strong></div>
+        <div class="stat"><span>Vidas</span><strong id="lives">♥♥♥</strong></div>
+        <div class="stat"><span>Oleada</span><strong id="wave">1</strong></div>
+        <div class="stat"><span>Racha</span><strong id="combo">—</strong></div>
+        <div class="stat"><span>Récord</span><strong id="best">0</strong></div>
+      </div>
+    </header>
+    <div class="bar" aria-hidden="true"><div id="fill"></div></div>
+    <div class="stage">
+      <canvas id="game" width="900" height="540"></canvas>
+    </div>
+    <div class="controls">
+      <span>Ratón o WASD · Espacio, Shift o clic derecho para esquivar · Esc pausa</span>
+      <button id="dash" type="button">Esquive</button>
+    </div>
+  </div>
+
+  <div class="start" id="start">
+    <div class="box">
+      <h2>A recoger</h2>
+      <p class="help">Atrapa las migas de oro y apártate del resto. Cada golpe cuesta una vida. Al ganar o perder, el video se reproduce aquí mismo, debajo del resultado.</p>
+      <ul class="legend">
+        <li><i class="c-gold"></i>Oro: recógela</li>
+        <li><i class="c-red"></i>Roja: cae en diagonal</li>
+        <li><i class="c-purple"></i>Cazador: te sigue</li>
+        <li><i class="c-teal"></i>Zigzag: se balancea</li>
+        <li><i class="c-yellow"></i>Rápida: avisa y se lanza</li>
+        <li><i class="c-orange"></i>Barrido: cruza de lado</li>
+        <li><i class="c-big"></i>Gorda: lenta y enorme</li>
+      </ul>
+      <button id="play" type="button">Jugar</button>
+    </div>
+  </div>
+
+  <div class="overlay" id="overlay">
+    <div class="card">
+      <h2 id="title"></h2>
+      <p class="reason" id="reason"></p>
+      <p class="migajero" id="migajero" hidden>MIGAJERO</p>
+      <video class="frame" id="clip" hidden controls autoplay playsinline></video>
+      <p><a id="open" href="#" target="_blank" rel="noopener" hidden>Abrir el video en YouTube</a></p>
+      <div>
+        <button id="again" type="button">Jugar otra vez</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const GOAL = 12;
+    const W = 900;
+    const H = 540;
+    const DASH_TIME = 0.12;
+    const DASH_CD = 0.85;
+    const BEST_KEY = "esquiva-migas-best";
+
+    const canvas = document.getElementById("game");
+    const ctx = canvas.getContext("2d");
+    const dpr = Math.min(window.devicePixelRatio || 1, 2);
+    canvas.width = W * dpr;
+    canvas.height = H * dpr;
+
+    const scoreEl = document.getElementById("score");
+    const livesEl = document.getElementById("lives");
+    const waveEl = document.getElementById("wave");
+    const comboEl = document.getElementById("combo");
+    const bestEl = document.getElementById("best");
+    const fillEl = document.getElementById("fill");
+    const overlay = document.getElementById("overlay");
+    const titleEl = document.getElementById("title");
+    const reasonEl = document.getElementById("reason");
+    const migajeroEl = document.getElementById("migajero");
+    const openEl = document.getElementById("open");
+    const clipEl = document.getElementById("clip");
+    const startEl = document.getElementById("start");
+
+    const DEATH = [
+      { chance: 0.50, id: "dQw4w9WgXcQ" },
+      { chance: 0.30, id: "fABIBm5OEj4" },
+      { chance: 0.20, id: "q5xl4Zip1fQ", migajero: true }
+    ];
+
+    const WIN = [
+      { chance: 0.10, id: "j0lSpNtjPM8" },
+      { chance: 0.90, id: "TEGBZJJwgv0" }
+    ];
+
+    const KIND = {
+      miga: { color: "#ff5d5d", label: "Miga", blame: "una miga roja" },
+      cazador: { color: "#c084fc", label: "Cazador", blame: "un cazador" },
+      zigzag: { color: "#5eead4", label: "Zigzag", blame: "una miga zigzag" },
+      rapido: { color: "#fde047", label: "Rápida", blame: "una miga rápida" },
+      barrido: { color: "#fb923c", label: "Barrido", blame: "una miga barrendera" },
+      gordo: { color: "#ef4444", label: "Gorda", blame: "una miga gorda" }
+    };
+
+    const keys = new Set();
+    const stars = Array.from({ length: 42 }, () => ({
+      x: Math.random() * W,
+      y: Math.random() * H,
+      r: Math.random() * 1.3 + 0.3,
+      s: 12 + Math.random() * 28
+    }));
+
+    let audioCtx = null;
+    let running = false;
+    let paused = false;
+    let ended = false;
+    let elapsed = 0;
+    let score = 0;
+    let lives = 3;
+    let wave = 1;
+    let combo = 0;
+    let best = 0;
+    let lastCollect = -10;
+    let killer = "una miga roja";
+    let shake = 0;
+    let hurt = 0;
+    let spawnAcc = 0;
+    let goldAcc = 0;
+    let usePointer = false;
+    let pointerX = W / 2;
+    let pointerY = H * 0.7;
+    let player;
+    let enemies;
+    let golds;
+    let particles;
+    let floaters;
+    let introduced;
+    let migajeroTimer;
+    let lastFrame = performance.now();
+
+    try {
+      best = Number(localStorage.getItem(BEST_KEY) || 0);
+    } catch (err) {
+      best = 0;
+    }
+
+    function clamp(v, a, b) {
+      return Math.max(a, Math.min(b, v));
+    }
+
+    function tone(freq, dur, type, volume) {
+      try {
+        if (!audioCtx) audioCtx = new AudioContext();
+        if (audioCtx.state === "suspended") audioCtx.resume();
+        const t = audioCtx.currentTime;
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.type = type;
+        osc.frequency.setValueAtTime(freq, t);
+        gain.gain.setValueAtTime(volume, t);
+        gain.gain.exponentialRampToValueAtTime(0.001, t + dur);
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+        osc.start(t);
+        osc.stop(t + dur);
+      } catch (err) {
+        /* el juego sigue sin audio */
+      }
+    }
+
+    function syncHud() {
+      scoreEl.textContent = String(score);
+      let hearts = "";
+      for (let i = 0; i < 3; i++) hearts += i < lives ? "♥" : "♡";
+      livesEl.textContent = hearts;
+      waveEl.textContent = String(wave);
+      comboEl.textContent = combo > 1 ? `x${combo}` : "—";
+      bestEl.textContent = String(best);
+      fillEl.style.width = `${Math.min(100, (score / GOAL) * 100)}%`;
+    }
+
+    function makePlayer() {
+      return {
+        x: W / 2,
+        y: H * 0.72,
+        px: W / 2,
+        py: H * 0.72,
+        r: 15,
+        dirx: 0,
+        diry: -1,
+        iframe: 0,
+        dashT: 0,
+        dashCd: 0,
+        trail: []
+      };
+    }
+
+    function resetWorld() {
+      score = 0;
+      lives = 3;
+      wave = 1;
+      combo = 0;
+      lastCollect = -10;
+      elapsed = 0;
+      killer = "una miga roja";
+      shake = 0;
+      hurt = 0;
+      spawnAcc = 0.15;
+      goldAcc = 1.45;
+      paused = false;
+      ended = false;
+      player = makePlayer();
+      enemies = [];
+      golds = [];
+      particles = [];
+      floaters = [];
+      introduced = new Set();
+      pointerX = player.x;
+      pointerY = player.y;
+      usePointer = false;
+      syncHud();
+    }
+
+    function pick(table) {
+      const roll = Math.random();
+      let cursor = 0;
+      for (const item of table) {
+        cursor += item.chance;
+        if (roll < cursor) return item;
+      }
+      return table[table.length - 1];
+    }
+
+    function stopClip() {
+      clipEl.pause();
+      clipEl.removeAttribute("src");
+      clipEl.load();
+      clipEl.hidden = true;
+    }
+
+    function embed(id) {
+      const watch = `https://www.youtube.com/watch?v=${id}`;
+      openEl.href = watch;
+      openEl.hidden = true;
+      clipEl.hidden = false;
+      fetch(`/play?id=${encodeURIComponent(id)}`)
+        .then((response) => {
+          if (!response.ok) throw new Error("sin video");
+          return response.json();
+        })
+        .then((data) => {
+          clipEl.src = data.url;
+          return clipEl.play();
+        })
+        .catch(() => {
+          clipEl.hidden = true;
+          openEl.hidden = false;
+        });
+    }
+
+    function finish(won) {
+      if (ended) return;
+      ended = true;
+      running = false;
+      paused = false;
+      clearTimeout(migajeroTimer);
+
+      const choice = pick(won ? WIN : DEATH);
+      titleEl.textContent = won ? "GANASTE" : "PERDISTE";
+      titleEl.style.color = won ? "#3ddc97" : "#ff5d5d";
+      reasonEl.textContent = won
+        ? "Juntaste las 12 migas de oro."
+        : `Te atrapó ${killer}.`;
+
+      migajeroEl.hidden = true;
+      openEl.hidden = true;
+      overlay.classList.add("show");
+      tone(won ? 660 : 90, won ? 0.14 : 0.22, won ? "triangle" : "sawtooth", 0.06);
+
+      if (choice.migajero) {
+        migajeroEl.hidden = false;
+        migajeroTimer = setTimeout(() => {
+          migajeroEl.hidden = true;
+          embed(choice.id);
+        }, 2200);
+      } else {
+        embed(choice.id);
+      }
+    }
+
+    function floatText(x, y, text, color, big) {
+      floaters.push({ x, y, text, color, life: big ? 1.35 : 0.7, max: big ? 1.35 : 0.7, big: !!big });
+    }
+
+    function burst(x, y, color, count) {
+      for (let i = 0; i < count; i++) {
+        const angle = Math.random() * Math.PI * 2;
+        const speed = 40 + Math.random() * 170;
+        particles.push({
+          x,
+          y,
+          vx: Math.cos(angle) * speed,
+          vy: Math.sin(angle) * speed,
+          life: 0.35 + Math.random() * 0.35,
+          max: 0.7,
+          color,
+          r: 1.8 + Math.random() * 2.4
+        });
+      }
+      if (particles.length > 180) particles.splice(0, particles.length - 180);
+    }
+
+    function fieldX() {
+      return 36 + Math.random() * (W - 72);
+    }
+
+    function awayFromPlayerX() {
+      let x = fieldX();
+      if (Math.abs(x - player.x) < 70) {
+        x = clamp(player.x + (player.x < W / 2 ? 140 : -140), 36, W - 36);
+      }
+      return x;
+    }
+
+    function laneY() {
+      let y = 80 + Math.random() * (H - 160);
+      if (Math.abs(y - player.y) < 100) {
+        y = player.y > H / 2 ? 100 : H - 100;
+      }
+      return y;
+    }
+
+    function pickKind() {
+      const pool = [
+        ["miga", 5],
+        ["gordo", elapsed > 5 ? 1.7 : 0],
+        ["cazador", elapsed > 8 ? 3: 0],
+        ["zigzag", elapsed > 12 ? 2.8 : 0],
+        ["rapido", elapsed > 16 ? 2.2 : 0],
+        ["barrido", elapsed > 21 ? 2.3 : 0]
+      ];
+      let total = 0;
+      for (const item of pool) total += item[1];
+      let roll = Math.random() * total;
+      for (const item of pool) {
+        roll -= item[1];
+        if (roll <= 0) return item[0];
+      }
+      return "miga";
+    }
+
+    function spawnEnemy(kind) {
+      if (enemies.length >= 10) return;
+      const meta = KIND[kind];
+      const enemy = {
+        kind,
+        color: meta.color,
+        label: meta.label,
+        blame: meta.blame,
+        x: W / 2,
+        y: -30,
+        r: 14,
+        vx: 0,
+        vy: 150,
+        phase: Math.random() * 6,
+        amp: 64,
+        seedX: W / 2,
+        warn: 0,
+        spin: Math.random() * Math.PI * 2
+      };
+
+      if (kind === "miga") {
+        enemy.r = 12 + Math.random() * 5;
+        enemy.x = fieldX();
+        enemy.vy = 125 + Math.random() * 55;
+        enemy.vx = (Math.random() - 0.5) * 70;
+      } else if (kind === "gordo") {
+        enemy.r = 30;
+        enemy.x = fieldX();
+        enemy.vy = 62 + Math.random() * 22;
+      } else if (kind === "cazador") {
+        enemy.r = 15;
+        enemy.x = fieldX();
+        enemy.vy = 128;
+      } else if (kind === "zigzag") {
+        enemy.r = 13;
+        enemy.seedX = fieldX();
+        enemy.x = enemy.seedX;
+        enemy.vy = 120 + Math.random() * 30;
+        enemy.amp = 54 + Math.random() * 36;
+      } else if (kind === "rapido") {
+        enemy.r = 10;
+        enemy.x = awayFromPlayerX();
+        enemy.y = -20;
+        enemy.warn = 0.62;
+        enemy.vy = 0;
+      } else if (kind === "barrido") {
+        enemy.r = 16;
+        const fromLeft = Math.random() < 0.5;
+        enemy.x = fromLeft ? -46 : W + 46;
+        enemy.y = laneY();
+        enemy.vx = fromLeft ? 265 : -265;
+        enemy.vy = 0;
+      }
+
+      enemies.push(enemy);
+    }
+
+    function spawnGold() {
+      if (golds.length >= 4) return;
+      golds.push({
+        x: fieldX(),
+        y: -18,
+        r: 11,
+        vy: 95 + Math.random() * 40,
+        spin: Math.random() * Math.PI
+      });
+    }
+
+    function clampPlayer() {
+      player.x = clamp(player.x, player.r + 2, W - player.r - 2);
+      player.y = clamp(player.y, player.r + 2, H - player.r - 2);
+    }
+
+    function tryDash() {
+      if (!running || paused || ended) return;
+      if (player.dashCd > 0 || player.dashT > 0) return;
+      const mag = Math.hypot(player.dirx, player.diry) || 1;
+      player.dirx /= mag;
+      player.diry /= mag;
+      player.dashT = DASH_TIME;
+      player.dashCd = DASH_CD;
+      player.iframe = Math.max(player.iframe, 0.2);
+      tone(540, 0.07, "square", 0.035);
+    }
+
+    function rememberBest() {
+      if (score <= best) return;
+      best = score;
+      try {
+        localStorage.setItem(BEST_KEY, String(best));
+      } catch (err) {
+        /* sin almacenamiento local */
+      }
+    }
+
+    function collectGold(gold, index) {
+      golds.splice(index, 1);
+      if (elapsed - lastCollect < 1.45) combo += 1;
+      else combo = 1;
+      lastCollect = elapsed;
+      score += 1;
+      rememberBest();
+      syncHud();
+      burst(gold.x, gold.y, "#f2c14e", 10);
+      floatText(gold.x, gold.y - 8, combo > 1 ? `+1  x${combo}` : "+1", "#ffe08a", false);
+      tone(560 + Math.min(combo, 8) * 36, 0.06, "triangle", 0.045);
+      if (score >= GOAL) finish(true);
+    }
+
+    function damage(enemy, index) {
+      enemies.splice(index, 1);
+      lives -= 1;
+      killer = enemy.blame;
+      player.iframe = 1.15;
+      shake = 14;
+      hurt = 0.4;
+      const dx = player.x - enemy.x;
+      const dy = player.y - enemy.y;
+      const dist = Math.hypot(dx, dy) || 1;
+      player.x += (dx / dist) * 34;
+      player.y += (dy / dist) * 34;
+      clampPlayer();
+      syncHud();
+      burst(player.x, player.y, enemy.color, 16);
+      tone(96, 0.16, "sawtooth", 0.05);
+      if (lives <= 0) finish(false);
+    }
+
+    function movePlayer(dt) {
+      const left = keys.has("arrowleft") || keys.has("a");
+      const right = keys.has("arrowright") || keys.has("d");
+      const up = keys.has("arrowup") || keys.has("w");
+      const down = keys.has("arrowdown") || keys.has("s");
+      const axisX = (right ? 1 : 0) - (left ? 1 : 0);
+      const axisY = (down ? 1 : 0) - (up ? 1 : 0);
+
+      if (player.dashT > 0) {
+        player.dashT -= dt;
+        player.x += player.dirx * 780 * dt;
+        player.y += player.diry * 780 * dt;
+      } else if (axisX || axisY) {
+        usePointer = false;
+        const mag = Math.hypot(axisX, axisY);
+        player.x += (axisX / mag) * 335 * dt;
+        player.y += (axisY / mag) * 335 * dt;
+        player.dirx = axisX / mag;
+        player.diry = axisY / mag;
+      } else if (usePointer) {
+        const dx = pointerX - player.x;
+        const dy = pointerY - player.y;
+        const dist = Math.hypot(dx, dy);
+        if (dist > 0.5) {
+          const step = Math.min(dist, 540 * dt);
+          player.x += (dx / dist) * step;
+          player.y += (dy / dist) * step;
+        }
+      }
+
+      clampPlayer();
+      const movedX = player.x - player.px;
+      const movedY = player.y - player.py;
+      const moved = Math.hypot(movedX, movedY);
+      if (moved > 0.5) {
+        player.dirx = movedX / moved;
+        player.diry = movedY / moved;
+      }
+      player.px = player.x;
+      player.py = player.y;
+      player.trail.push({ x: player.x, y: player.y });
+      if (player.trail.length > 12) player.trail.shift();
+      if (player.iframe > 0) player.iframe -= dt;
+      if (player.dashCd > 0) player.dashCd -= dt;
+    }
+
+    function updateEnemy(enemy, dt) {
+      enemy.spin += dt * (enemy.kind === "barrido" ? 6 : 1.6);
+      enemy.phase += dt * 3.1;
+      if (enemy.warn > 0) {
+        enemy.warn -= dt;
+        if (enemy.warn <= 0) {
+          enemy.y = -8;
+          enemy.vy = 520;
+        }
+        return;
+      }
+      if (enemy.kind === "cazador") {
+        const dx = player.x - enemy.x;
+        enemy.vx += Math.sign(dx) * 240 * dt;
+        enemy.vx = clamp(enemy.vx, -100, 100);
+      }
+      if (enemy.kind === "zigzag") {
+        enemy.x = clamp(enemy.seedX + Math.sin(enemy.phase) * enemy.amp, enemy.r + 6, W - enemy.r - 6);
+        enemy.y += enemy.vy * dt;
+      } else {
+        enemy.x += enemy.vx * dt;
+        enemy.y += enemy.vy * dt;
+        if (enemy.kind !== "barrido") {
+          enemy.x = clamp(enemy.x, enemy.r, W - enemy.r);
+        }
+      }
+      if (!introduced.has(enemy.kind) && enemy.y > 16) {
+        introduced.add(enemy.kind);
+        floatText(enemy.x, Math.max(28, enemy.y - 26), enemy.label, enemy.color, false);
+      }
+    }
+
+    function enemyGone(enemy) {
+      if (enemy.kind === "barrido") return enemy.x < -90 || enemy.x > W + 90;
+      return enemy.y > H + 70;
+    }
+
+    function collides(enemy) {
+      if (enemy.warn > 0 || player.iframe > 0) return false;
+      const dx = player.x - enemy.x;
+      const dy = player.y - enemy.y;
+      const reach = player.r * 0.7 + enemy.r * 0.78;
+      return dx * dx + dy * dy < reach * reach;
+    }
+
+    function update(dt) {
+      elapsed += dt;
+      const nextWave = 1 + Math.floor(elapsed / 16);
+      if (nextWave !== wave) {
+        wave = nextWave;
+        syncHud();
+        floatText(W / 2, H / 2, `OLEADA ${wave}`, "#f4f1ea", true);
+        tone(420, 0.08, "square", 0.03);
+      }
+
+      movePlayer(dt);
+      shake = Math.max(0, shake - dt * 30);
+      hurt = Math.max(0, hurt - dt);
+
+      for (const star of stars) {
+        star.y += star.s * dt;
+        if (star.y > H) {
+          star.y = 0;
+          star.x = Math.random() * W;
+        }
+      }
+
+      spawnAcc += dt;
+      const interval = Math.max(0.36, 0.78 - (wave - 1) * 0.1);
+      if (spawnAcc >= interval) {
+        spawnAcc = 0;
+        spawnEnemy(pickKind());
+        if (wave >= 3 && Math.random() < 0.28) spawnEnemy("miga");
+      }
+
+      goldAcc += dt;
+      if (goldAcc >= Math.max(1.2, 2.05 - (wave - 1) * 0.07)) {
+        goldAcc = 0;
+        spawnGold();
+      }
+
+      for (let i = enemies.length - 1; i >= 0; i--) {
+        const enemy = enemies[i];
+        updateEnemy(enemy, dt);
+        if (enemyGone(enemy)) enemies.splice(i, 1);
+      }
+
+      if (!running) return;
+
+      for (let i = golds.length - 1; i >= 0; i--) {
+        const gold = golds[i];
+        gold.y += gold.vy * dt;
+        gold.spin += dt * 3;
+        let dx = player.x - gold.x;
+        let dy = player.y - gold.y;
+        let dist = Math.hypot(dx, dy);
+        if (dist < 78 && dist > 0.1) {
+          gold.x += (dx / dist) * 140 * dt;
+          gold.y += (dy / dist) * 140 * dt;
+          dx = player.x - gold.x;
+          dy = player.y - gold.y;
+          dist = Math.hypot(dx, dy);
+        }
+        if (dist < player.r + gold.r) {
+          collectGold(gold, i);
+          if (!running) return;
+        } else if (gold.y > H + 30) {
+          golds.splice(i, 1);
+        }
+      }
+
+      for (let i = enemies.length - 1; i >= 0; i--) {
+        if (collides(enemies[i])) {
+          damage(enemies[i], i);
+          break;
+        }
+      }
+
+      for (let i = particles.length - 1; i >= 0; i--) {
+        const bit = particles[i];
+        bit.life -= dt;
+        bit.x += bit.vx * dt;
+        bit.y += bit.vy * dt;
+        bit.vy += 20 * dt;
+        if (bit.life <= 0) particles.splice(i, 1);
+      }
+
+      for (let i = floaters.length - 1; i >= 0; i--) {
+        const text = floaters[i];
+        text.life -= dt;
+        text.y -= (text.big ? 18 : 28) * dt;
+        if (text.life <= 0) floaters.splice(i, 1);
+      }
+    }
+
+    function shadow(x, y, r) {
+      ctx.fillStyle = "rgba(0,0,0,0.28)";
+      ctx.beginPath();
+      ctx.ellipse(x, y + r * 0.9, r * 0.85, r * 0.28, 0, 0, Math.PI * 2);
+      ctx.fill();
+    }
+
+    function eyes(r) {
+      ctx.fillStyle = "#1a0b10";
+      ctx.beginPath();
+      ctx.arc(-r * 0.28, -r * 0.05, Math.max(1.4, r * 0.14), 0, Math.PI * 2);
+      ctx.arc(r * 0.28, -r * 0.05, Math.max(1.4, r * 0.14), 0, Math.PI * 2);
+      ctx.fill();
+    }
+
+    function drawBackground() {
+      const sky = ctx.createLinearGradient(0, 0, 0, H);
+      sky.addColorStop(0, "#1b2433");
+      sky.addColorStop(1, "#0c1016");
+      ctx.fillStyle = sky;
+      ctx.fillRect(-40, -40, W + 80, H + 80);
+
+      ctx.strokeStyle = "rgba(255,255,255,0.035)";
+      ctx.lineWidth = 1;
+      const offset = (elapsed * 36) % 46;
+      for (let y = -46; y < H + 46; y += 46) {
+        ctx.beginPath();
+        ctx.moveTo(-20, y + offset);
+        ctx.lineTo(W + 20, y + offset);
+        ctx.stroke();
+      }
+
+      for (const star of stars) {
+        ctx.globalAlpha = 0.45;
+        ctx.fillStyle = "#d5e4f5";
+        ctx.beginPath();
+        ctx.arc(star.x, star.y, star.r, 0, Math.PI * 2);
+        ctx.fill();
+      }
+      ctx.globalAlpha = 1;
+
+      const vignette = ctx.createRadialGradient(W / 2, H / 2, 140, W / 2, H / 2, 520);
+      vignette.addColorStop(0, "rgba(0,0,0,0)");
+      vignette.addColorStop(1, "rgba(0,0,0,0.38)");
+      ctx.fillStyle = vignette;
+      ctx.fillRect(-40, -40, W + 80, H + 80);
+    }
+
+    function drawWarnings() {
+      for (const enemy of enemies) {
+        if (enemy.warn <= 0) continue;
+        const left = enemy.warn / 0.62;
+        ctx.save();
+        ctx.globalAlpha = 0.35 + (1 - left) * 0.45;
+        ctx.strokeStyle = enemy.color;
+        ctx.lineWidth = 2;
+        ctx.setLineDash([7, 8]);
+        ctx.beginPath();
+        ctx.moveTo(enemy.x, 18);
+        ctx.lineTo(enemy.x, H - 16);
+        ctx.stroke();
+        ctx.setLineDash([]);
+        ctx.beginPath();
+        ctx.arc(enemy.x, 26, 8 + (1 - left) * 10, 0, Math.PI * 2);
+        ctx.stroke();
+        ctx.restore();
+      }
+    }
+
+    function drawEnemy(enemy) {
+      if (enemy.warn > 0) return;
+      shadow(enemy.x, enemy.y, enemy.r);
+      ctx.save();
+      ctx.translate(enemy.x, enemy.y);
+      ctx.fillStyle = enemy.color;
+
+      if (enemy.kind === "miga") {
+        ctx.rotate(enemy.spin * 0.4);
+        ctx.beginPath();
+        for (let i = 0; i < 9; i++) {
+          const angle = (i / 9) * Math.PI * 2;
+          const radius = enemy.r * (i % 2 ? 1 : 0.72);
+          ctx.lineTo(Math.cos(angle) * radius, Math.sin(angle) * radius);
+        }
+        ctx.closePath();
+        ctx.fill();
+        eyes(enemy.r);
+      } else if (enemy.kind === "cazador") {
+        ctx.beginPath();
+        ctx.moveTo(0, enemy.r * 1.15);
+        ctx.lineTo(enemy.r * 0.95, -enemy.r * 0.35);
+        ctx.lineTo(0, -enemy.r * 0.85);
+        ctx.lineTo(-enemy.r * 0.95, -enemy.r * 0.35);
+        ctx.closePath();
+        ctx.fill();
+        ctx.fillStyle = "rgba(255,255,255,0.35)";
+        ctx.beginPath();
+        ctx.moveTo(0, enemy.r * 0.2);
+        ctx.lineTo(enemy.r * 0.28, -enemy.r * 0.15);
+        ctx.lineTo(-enemy.r * 0.28, -enemy.r * 0.15);
+        ctx.fill();
+      } else if (enemy.kind === "zigzag") {
+        ctx.rotate(Math.sin(enemy.phase) * 0.4);
+        ctx.beginPath();
+        ctx.moveTo(0, -enemy.r * 1.15);
+        ctx.lineTo(enemy.r, 0);
+        ctx.lineTo(0, enemy.r * 1.15);
+        ctx.lineTo(-enemy.r, 0);
+        ctx.closePath();
+        ctx.fill();
+        eyes(enemy.r * 0.8);
+      } else if (enemy.kind === "rapido") {
+        ctx.beginPath();
+        ctx.moveTo(0, enemy.r * 1.9);
+        ctx.lineTo(enemy.r * 0.62, -enemy.r * 1.1);
+        ctx.lineTo(-enemy.r * 0.62, -enemy.r * 1.1);
+        ctx.closePath();
+        ctx.fill();
+      } else if (enemy.kind === "barrido") {
+        ctx.rotate(enemy.spin);
+        ctx.beginPath();
+        ctx.ellipse(0, 0, enemy.r * 1.35, enemy.r * 0.72, 0, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.beginPath();
+        for (let i = 0; i < 7; i++) {
+          const angle = (i / 7) * Math.PI * 2;
+          ctx.moveTo(Math.cos(angle) * enemy.r * 0.4, Math.sin(angle) * enemy.r * 0.25);
+          ctx.lineTo(Math.cos(angle) * enemy.r * 1.75, Math.sin(angle) * enemy.r * 0.95);
+        }
+        ctx.lineWidth = 3;
+        ctx.strokeStyle = enemy.color;
+        ctx.stroke();
+      } else if (enemy.kind === "gordo") {
+        ctx.beginPath();
+        ctx.arc(0, 0, enemy.r, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.lineWidth = 5;
+        ctx.strokeStyle = "#7f1d1d";
+        ctx.stroke();
+        ctx.beginPath();
+        ctx.arc(0, 0, enemy.r * 0.48, 0, Math.PI * 2);
+        ctx.strokeStyle = "rgba(255,220,220,0.45)";
+        ctx.lineWidth = 3;
+        ctx.stroke();
+        eyes(enemy.r);
+      }
+
+      ctx.restore();
+    }
+
+    function drawGold(gold) {
+      shadow(gold.x, gold.y, gold.r);
+      ctx.save();
+      ctx.translate(gold.x, gold.y);
+      ctx.rotate(gold.spin);
+      ctx.fillStyle = "#f2c14e";
+      ctx.beginPath();
+      ctx.arc(0, 0, gold.r, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.strokeStyle = "#fff6cf";
+      ctx.lineWidth = 2;
+      ctx.stroke();
+      ctx.fillStyle = "#6a4b09";
+      ctx.font = "700 13px Segoe UI, sans-serif";
+      ctx.textAlign = "center";
+      ctx.textBaseline = "middle";
+      ctx.fillText("✦", 0, 1);
+      ctx.restore();
+    }
+
+    function drawPlayer() {
+      for (let i = 0; i < player.trail.length; i++) {
+        const bit = player.trail[i];
+        ctx.globalAlpha = (i / player.trail.length) * (player.dashT > 0 ? 0.55 : 0.28);
+        ctx.fillStyle = "#9ad7ff";
+        ctx.beginPath();
+        ctx.arc(bit.x, bit.y, player.r * (0.35 + 0.5 * (i / player.trail.length)), 0, Math.PI * 2);
+        ctx.fill();
+      }
+      ctx.globalAlpha = 1;
+
+      shadow(player.x, player.y, player.r);
+      const blink = player.iframe > 0.2 && Math.sin(elapsed * 30) > 0;
+      ctx.save();
+      ctx.globalAlpha = blink ? 0.4 : 1;
+      ctx.translate(player.x, player.y);
+      const ready = player.dashCd <= 0;
+      ctx.fillStyle = player.dashT > 0 ? "#f7fbff" : "#7ec8ff";
+      ctx.beginPath();
+      ctx.arc(0, 0, player.r, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.fillStyle = "#e8f6ff";
+      ctx.beginPath();
+      ctx.arc(-2, 2, player.r * 0.62, 0, Math.PI * 2);
+      ctx.fill();
+      const lookX = player.dirx * 3.2;
+      const lookY = player.diry * 2.4;
+      ctx.fillStyle = "#102033";
+      ctx.beginPath();
+      ctx.arc(-5 + lookX, -2 + lookY, 2.2, 0, Math.PI * 2);
+      ctx.arc(5 + lookX, -2 + lookY, 2.2, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.restore();
+
+      ctx.strokeStyle = ready ? "#f2c14e" : "rgba(242,193,78,0.35)";
+      ctx.lineWidth = 3;
+      ctx.beginPath();
+      const charge = player.dashCd > 0 ? 1 - player.dashCd / DASH_CD : 1;
+      ctx.arc(player.x, player.y, player.r + 7, -Math.PI / 2, -Math.PI / 2 + Math.PI * 2 * charge);
+      ctx.stroke();
+    }
+
+    function drawFloaters() {
+      for (const text of floaters) {
+        ctx.globalAlpha = Math.max(0, text.life / text.max);
+        ctx.fillStyle = text.color;
+        ctx.font = text.big ? "700 32px Segoe UI, sans-serif" : "700 16px Segoe UI, sans-serif";
+        ctx.textAlign = "center";
+        ctx.textBaseline = "middle";
+        ctx.fillText(text.text, text.x, text.y);
+      }
+      ctx.globalAlpha = 1;
+    }
+
+    function draw() {
+      ctx.setTransform(1, 0, 0, 1, 0, 0);
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      const jx = shake ? (Math.random() - 0.5) * shake : 0;
+      const jy = shake ? (Math.random() - 0.5) * shake : 0;
+      ctx.setTransform(dpr, 0, 0, dpr, jx * dpr, jy * dpr);
+
+      drawBackground();
+      drawWarnings();
+      for (const enemy of enemies) drawEnemy(enemy);
+      for (const gold of golds) drawGold(gold);
+
+      for (const bit of particles) {
+        ctx.globalAlpha = Math.max(0, bit.life / bit.max);
+        ctx.fillStyle = bit.color;
+        ctx.beginPath();
+        ctx.arc(bit.x, bit.y, bit.r, 0, Math.PI * 2);
+        ctx.fill();
+      }
+      ctx.globalAlpha = 1;
+
+      if (player) drawPlayer();
+      drawFloaters();
+
+      if (running && !paused && elapsed < 4) {
+        ctx.globalAlpha = elapsed > 3 ? 4 - elapsed : 0.9;
+        ctx.fillStyle = "#d5dbe6";
+        ctx.font = "16px Segoe UI, sans-serif";
+        ctx.textAlign = "center";
+        ctx.fillText("Muévete libre · el aro dorado es el esquive", W / 2, 26);
+        ctx.globalAlpha = 1;
+      }
+
+      if (lives === 1 && running && !paused) {
+        const pulse = 0.25 + (Math.sin(elapsed * 7) + 1) * 0.18;
+        ctx.strokeStyle = `rgba(255, 80, 80, ${pulse})`;
+        ctx.lineWidth = 8;
+        ctx.strokeRect(6, 6, W - 12, H - 12);
+      }
+
+      if (hurt > 0) {
+        ctx.fillStyle = `rgba(255, 60, 60, ${hurt * 0.45})`;
+        ctx.fillRect(-40, -40, W + 80, H + 80);
+      }
+
+      if (paused) {
+        ctx.fillStyle = "rgba(5, 7, 10, 0.55)";
+        ctx.fillRect(-40, -40, W + 80, H + 80);
+        ctx.fillStyle = "#f4f1ea";
+        ctx.textAlign = "center";
+        ctx.font = "700 42px Segoe UI, sans-serif";
+        ctx.fillText("PAUSA", W / 2, H / 2);
+        ctx.fillStyle = "#a8b0bd";
+        ctx.font = "18px Segoe UI, sans-serif";
+        ctx.fillText("Esc para seguir", W / 2, H / 2 + 34);
+      }
+    }
+
+    function loop(now) {
+      const dt = Math.min(0.033, (now - lastFrame) / 1000);
+      lastFrame = now;
+      if (running && !paused) update(dt);
+      draw();
+      requestAnimationFrame(loop);
+    }
+
+    function pointerPos(event) {
+      const rect = canvas.getBoundingClientRect();
+      pointerX = ((event.clientX - rect.left) / rect.width) * W;
+      pointerY = ((event.clientY - rect.top) / rect.height) * H;
+    }
+
+    function startGame() {
+      clearTimeout(migajeroTimer);
+      stopClip();
+      overlay.classList.remove("show");
+      openEl.hidden = true;
+      startEl.style.display = "none";
+      resetWorld();
+      running = true;
+      if (audioCtx && audioCtx.state === "suspended") audioCtx.resume();
+    }
+
+    canvas.addEventListener("pointermove", (event) => {
+      pointerPos(event);
+      if (!running || paused) return;
+      const typing = keys.has("arrowleft") || keys.has("arrowright") || keys.has("a") || keys.has("d")
+        || keys.has("arrowup") || keys.has("arrowdown") || keys.has("w") || keys.has("s");
+      if (!typing) usePointer = true;
+    });
+
+    canvas.addEventListener("pointerdown", (event) => {
+      pointerPos(event);
+      if (event.button === 2) tryDash();
+    });
+
+    canvas.addEventListener("contextmenu", (event) => event.preventDefault());
+
+    window.addEventListener("keydown", (event) => {
+      if (running && (event.code === "Space" || event.key.startsWith("Arrow"))) {
+        event.preventDefault();
+      }
+      keys.add(event.key.toLowerCase());
+      if (event.key === "Escape" && running && !ended) {
+        paused = !paused;
+        return;
+      }
+      if (!event.repeat && (event.code === "Space" || event.key === "Shift")) tryDash();
+    });
+
+    window.addEventListener("keyup", (event) => {
+      keys.delete(event.key.toLowerCase());
+    });
+
+    document.getElementById("play").addEventListener("click", startGame);
+    document.getElementById("again").addEventListener("click", startGame);
+    document.getElementById("dash").addEventListener("click", tryDash);
+
+    resetWorld();
+    requestAnimationFrame(loop);
+  </script>
+</body>
+</html>
